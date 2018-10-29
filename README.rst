@@ -34,6 +34,7 @@ but metrics for broader analysis.
 Usage
 #####
 ::
+
   import uberlogging
   uberlogging.configure()
 
