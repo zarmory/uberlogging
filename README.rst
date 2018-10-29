@@ -53,6 +53,6 @@ Where are tests?
 ################
 No tests, only deadlines :)
 Seriously though, there is ``demo.sh`` script that's good enough for now, since
-this library is not going to see much of development.
+this library is not going to see much of a development.
 
 Tested on Python3.6+ only!
