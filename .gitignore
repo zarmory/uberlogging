@@ -102,3 +102,13 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# VIM swap files
+.*.swp
+.swp
+.*.swo
+.swo
+
+# This is a library, so we don't need our own Pipfile*
+Pipfile
+Pipfile.lock
