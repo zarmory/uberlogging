@@ -125,7 +125,7 @@ def _detect_style(style):
         return style
 
     isatty = sys.stderr.isatty()
-    force_text = True if os.environ.get("UBERLOG_FORCE_TEXT") else False
+    force_text = True if os.environ.get("UBERLOGGING_FORCE_TEXT") else False
     use_json = not (isatty or force_text)
     colored = isatty and not use_json
 

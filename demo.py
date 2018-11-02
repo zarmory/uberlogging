@@ -32,10 +32,10 @@ def main():
     uberlogging.configure(cache_structlog_loggers=False, logger_confs=logger_confs)
     uberlogging.get_logger(dbgl).debug("This particular logger is in debug level", text="foo", i=1)
 
-    os.environ["UBERLOG_FORCE_TEXT"] = "1"
+    os.environ["UBERLOGGING_FORCE_TEXT"] = "1"
     uberlogging.configure(cache_structlog_loggers=False)
     logger.info("Autoconfigured with forced text", text="foo", i=1)
-    os.environ.unsetenv("UBERLOG_FORCE_TEXT")
+    os.environ.unsetenv("UBERLOGGING_FORCE_TEXT")
 
     uberlogging.configure(fmt="%(asctime)s %(levelname)s -- %(message)s",
                           datefmt="%H:%M:%S",

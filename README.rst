@@ -46,7 +46,7 @@ For convenience, structlog's ``get_logging`` has been hoisted to uberlog::
   logger = uberlogging.get_logger("main")
   logger.info("Here we go")
 
-Define ``UBERLOG_FORCE_TEXT=1`` environment variable
+Define ``UBERLOGGING_FORCE_TEXT=1`` environment variable
 to force text output in non-tty streams. Useful for local environments when
 running your app with output redirection.
 
