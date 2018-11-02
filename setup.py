@@ -11,7 +11,7 @@ with open("LICENSE") as f:
 
 setup(
     name="uberlogging",
-    version="0.0.1",
+    version="0.0.2",
     description="Highly opinionated logging configurator",
     long_description=readme,
     author="Zaar Hai",
