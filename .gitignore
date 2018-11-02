@@ -108,7 +108,3 @@ venv.bak/
 .swp
 .*.swo
 .swo
-
-# This is a library, so we don't need our own Pipfile*
-Pipfile
-Pipfile.lock
