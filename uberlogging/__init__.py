@@ -30,8 +30,8 @@ field_styles.update({
 
 
 default_fmt = "%(asctime)s.%(msecs)03d: " + \
-                 "%(name)-15s %(levelname)-5s ## " + \
-                 "%(message)s     %(module)s.%(funcName)s:%(lineno)d"
+              "%(name)-15s %(levelname)-5s ## " + \
+              "%(message)s     %(module)s.%(funcName)s:%(lineno)d"
 default_datefmt = "%Y-%m-%dT%H:%M:%S"
 simple_fmt_name = "simple"
 simple_json_fmt_name = "simple_json"
