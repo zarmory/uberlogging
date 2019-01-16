@@ -200,6 +200,8 @@ class KeyValueRendererWithFlatEventColors:
 
     def __call__(self, _, __, event_dict):
         ev = event_dict.pop("event") if "event" in event_dict else ""
+        if not isinstance(ev, str):
+            ev = str(ev)
 
         context = " ".join(
             (ansi_wrap(key, **self.style_key) if self.color else key) +
