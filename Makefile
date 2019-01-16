@@ -1,5 +1,6 @@
-init:
-	pipenv install
+SHELL = /bin/bash
 
-test:
-	nosetests tests
+release:
+	bumpversion --verbose $${PART:-patch}
+	git push
+	git push --tags
