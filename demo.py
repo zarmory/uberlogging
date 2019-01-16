@@ -24,13 +24,17 @@ def main():
     logger.info("Json, no colors", text="foo", i=1)
 
     dbgl = "dbg"
-    logger_confs = {
-        dbgl: {
-            "level": "DEBUG",
-        }
-    }
+    logger_confs = {dbgl: {"level": "DEBUG"}}
     uberlogging.configure(cache_structlog_loggers=False, logger_confs=logger_confs)
     uberlogging.get_logger(dbgl).debug("This particular logger is in debug level", text="foo", i=1)
+
+    lname = "parent.child"
+    logger_confs_list = [dict(
+        name=lname,
+        level="DEBUG",
+    )]
+    uberlogging.configure(cache_structlog_loggers=False, logger_confs_list=logger_confs_list)
+    uberlogging.get_logger(lname).debug("Hierarchial logger config through list")
 
     os.environ["UBERLOGGING_FORCE_TEXT"] = "1"
     uberlogging.configure(cache_structlog_loggers=False)

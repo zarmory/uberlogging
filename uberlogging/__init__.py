@@ -77,7 +77,8 @@ def default_conf(fmt=default_fmt, datefmt=default_datefmt):
 
 def configure(style=Style.auto,
               fmt=default_fmt, datefmt=default_datefmt,
-              logger_confs=None,
+              logger_confs: dict=None,
+              logger_confs_list: list=None,
               cache_structlog_loggers=True,
               full_conf=None):
     """
@@ -95,15 +96,30 @@ def configure(style=Style.auto,
 
     :param datefmt:
         Custom timestamp formatting to use. In stdlib logging format.
-        This is a shortcut to change configration quickly without
+        This is a shortcut to change configuration quickly without
         fiddling with logging configuration in full
 
     :logger_confs:
-        Configuraiton for additional loggers, e.g.::
+        Configuration for additional loggers, e.g.::
 
             logger_confs = {
                 "requests": {"level": "DEBUG"}
             }
+
+    :logger_confs_list:
+        Configuration for additional loggers in list format.
+        The list will be converted to logger_confs dict (overriding existing key)
+        The rationale is overcome limitation of configuration libraries that don't
+        allow config property name to container ".", therefore inhibiting configuration
+        of hierarchical loggers
+
+        Example::
+
+            logger_confs_list = [
+                {"name": "foo", "level": "INFO"},
+                {"name": "foo.bar", "level": "ERROR"},
+            }
+
 
     :cache_structlog_loggers:
         Enable/disabled caching of structlog loggers as described
@@ -115,7 +131,7 @@ def configure(style=Style.auto,
     use_json = actual_style == Style.json
     colored = actual_style == Style.text_color
 
-    conf = full_conf or _build_conf(fmt, datefmt, logger_confs, use_json)
+    conf = full_conf or _build_conf(fmt, datefmt, logger_confs, logger_confs_list, use_json)
     _configure_structlog(colored, cache_structlog_loggers)
     _configure_stdliblog(conf, colored, is_custom=bool(full_conf))
 
@@ -159,8 +175,12 @@ def _configure_structlog(colored, cache_loggers):
     )
 
 
-def _build_conf(fmt, datefmt, logger_confs, use_json):
+def _build_conf(fmt, datefmt, logger_confs, logger_confs_list, use_json):
     conf = default_conf(fmt, datefmt)
+    logger_confs = logger_confs or {}
+    for lconf in (logger_confs_list or []):
+        name = lconf.pop("name")
+        logger_confs[name] = lconf
     if logger_confs:
         conf["loggers"] = logger_confs
     if use_json:
