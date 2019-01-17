@@ -11,8 +11,8 @@ def main():
     # showcase style changes.
 
     uberlogging.configure(cache_structlog_loggers=False)
-    logger.info("Plain text, autoconfigured with defaults", text="foo", i=1)
-    logging.getLogger("STDLIB").warn("Stdlib logger comming through")
+    logger.info("Plain text, autoconfigured with %s", "defaults", text="foo", i=1)
+    logging.getLogger("STDLIB").warn("Stdlib logger comming %s", "through")
 
     uberlogging.configure(style=uberlogging.Style.text_color, cache_structlog_loggers=False)
     logger.info("Plain text, colors (forced)", text="foo", i=1)
