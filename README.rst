@@ -33,7 +33,7 @@ but metrics for broader analysis.
 
 Usage
 #####
-::
+.. code:: python
 
   import uberlogging
   uberlogging.configure()
@@ -43,8 +43,10 @@ library's ``logging``, create your logger and start writing your app.
 
 For convenience, structlog's ``get_logging`` has been hoisted to uberlog::
 
+.. code:: python
+
   logger = uberlogging.get_logger("main")
-  logger.info("Here we go")
+  logger.info("Rocky road", to="Dublin")
 
 Define ``UBERLOGGING_FORCE_TEXT=1`` environment variable
 to force text output in non-tty streams. Useful for local environments when
