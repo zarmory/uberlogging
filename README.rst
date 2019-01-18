@@ -41,7 +41,7 @@ Usage
 That's all. You are ready to go. Simply import ``structlog`` or standard
 library's ``logging``, create your logger and start writing your app.
 
-For convenience, structlog's ``get_logging`` has been hoisted to uberlog::
+For convenience, structlog's ``get_logging`` has been hoisted to uberlog:
 
 .. code:: python
 
