@@ -4,6 +4,7 @@ import os
 import sys
 from copy import deepcopy
 from enum import Enum
+import logging
 from logging.config import dictConfig
 
 import coloredlogs
@@ -21,19 +22,12 @@ __all__ = (
     "style",
 )
 
-field_styles = deepcopy(coloredlogs.DEFAULT_FIELD_STYLES)
-field_styles.update({
-    "module": {"color": "white", "faint": True},
-    "funcName": {"color": "white", "faint": True},
-    "lineno": {"color": "white", "faint": True},
-})
-
-
 default_fmt = "%(asctime)s.%(msecs)03d: " + \
               "%(name)-15s %(levelname)-5s ## " + \
               "%(message)s     %(module)s.%(funcName)s:%(lineno)d"
 default_datefmt = "%Y-%m-%dT%H:%M:%S"
 simple_fmt_name = "simple"
+simple_colors_fmt_name = "simple_colors"
 simple_json_fmt_name = "simple_json"
 
 
@@ -44,6 +38,13 @@ class Style(Enum):
     text_no_color = 3
 
 
+style_to_fmt_name = {
+    Style.json: simple_json_fmt_name,
+    Style.text_color: simple_colors_fmt_name,
+    Style.text_no_color: simple_fmt_name,
+}
+
+
 def default_conf(fmt=default_fmt, datefmt=default_datefmt):
     return {
         "version": 1,
@@ -52,12 +53,16 @@ def default_conf(fmt=default_fmt, datefmt=default_datefmt):
             simple_fmt_name: {
                 "format": fmt,
                 "datefmt": datefmt,
-                "class": "logging.Formatter"
+                "class": "logging.Formatter",
+            },
+            simple_colors_fmt_name: {
+                "format": fmt,
+                "datefmt": datefmt,
+                "class": "uberlogging.ColoredFormatter",
             },
             simple_json_fmt_name: {
                 "format": fmt,
                 "datefmt": datefmt,
-                # "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
                 "class": "uberlogging.SeverityJsonFormatter",
             }
         },
@@ -69,7 +74,7 @@ def default_conf(fmt=default_fmt, datefmt=default_datefmt):
             }
         },
         "root": {
-            "level": "INFO",
+            "level": None,
             "handlers": ["console"],
         },
     }
@@ -77,10 +82,11 @@ def default_conf(fmt=default_fmt, datefmt=default_datefmt):
 
 def configure(style=Style.auto,
               fmt=default_fmt, datefmt=default_datefmt,
-              logger_confs: dict=None,
-              logger_confs_list: list=None,
+              logger_confs: dict = None,
+              logger_confs_list: list = None,
               cache_structlog_loggers=True,
-              full_conf=None):
+              full_conf: dict = None,
+              root_level=logging.INFO):
     """
     Configure both structlog and stdlib logger libraries
     with sane defaults.
@@ -99,14 +105,14 @@ def configure(style=Style.auto,
         This is a shortcut to change configuration quickly without
         fiddling with logging configuration in full
 
-    :logger_confs:
+    :param logger_confs:
         Configuration for additional loggers, e.g.::
 
             logger_confs = {
                 "requests": {"level": "DEBUG"}
             }
 
-    :logger_confs_list:
+    :param logger_confs_list:
         Configuration for additional loggers in list format.
         The list will be converted to logger_confs dict (overriding existing key)
         The rationale is overcome limitation of configuration libraries that don't
@@ -121,19 +127,26 @@ def configure(style=Style.auto,
             }
 
 
-    :cache_structlog_loggers:
+    :param cache_structlog_loggers:
         Enable/disabled caching of structlog loggers as described
         in `documentation <http://www.structlog.org/en/stable/performance.html>`_.
         You should generally leave it to True, unless, e.g. writing tests
+
+    :param full_conf:
+        Provide your own dictConfig dictionary - hard override for everything except
+        of structlog key-val formatting
+
+    :param root_level:
+        Set log level of the root logger. Defaults to logging.INFO.
     """
 
     actual_style = _detect_style(style)
-    use_json = actual_style == Style.json
-    colored = actual_style == Style.text_color
+    formatter_name = style_to_fmt_name[actual_style]
+    colored = (actual_style == Style.text_color)
 
-    conf = full_conf or _build_conf(fmt, datefmt, logger_confs, logger_confs_list, use_json)
+    conf = full_conf or _build_conf(fmt, datefmt, logger_confs, logger_confs_list, formatter_name, root_level)
     _configure_structlog(colored, cache_structlog_loggers)
-    _configure_stdliblog(conf, colored, is_custom=bool(full_conf))
+    _configure_stdliblog(conf)
 
 
 def _detect_style(style):
@@ -175,7 +188,11 @@ def _configure_structlog(colored, cache_loggers):
     )
 
 
-def _build_conf(fmt, datefmt, logger_confs, logger_confs_list, use_json):
+def _configure_stdliblog(conf):
+    dictConfig(conf)
+
+
+def _build_conf(fmt, datefmt, logger_confs, logger_confs_list, formatter_name, root_level):
     conf = default_conf(fmt, datefmt)
     logger_confs = logger_confs or {}
     for lconf in (logger_confs_list or []):
@@ -183,25 +200,10 @@ def _build_conf(fmt, datefmt, logger_confs, logger_confs_list, use_json):
         logger_confs[name] = lconf
     if logger_confs:
         conf["loggers"] = logger_confs
-    if use_json:
-        for handler in conf["handlers"].values():
-            handler["formatter"] = simple_json_fmt_name
+    for handler in conf["handlers"].values():
+        handler["formatter"] = formatter_name
+    conf["root"]["level"] = logging.getLevelName(root_level)
     return conf
-
-
-def _configure_stdliblog(conf, colored, is_custom):
-    dictConfig(conf)
-    if not colored:
-        return
-    if is_custom:
-        # Custom configuration used. Install coloring manually
-        return
-
-    coloredlogs.install(fmt=conf["formatters"]["simple"]["format"],
-                        datefmt=conf["formatters"]["simple"]["datefmt"],
-                        field_styles=field_styles,
-                        level="DEBUG",
-                        )
 
 
 class SeverityJsonFormatter(jsonlogger.JsonFormatter):
@@ -209,6 +211,19 @@ class SeverityJsonFormatter(jsonlogger.JsonFormatter):
         # Fix for Stackdriver that expects loglevel in "severity" field
         super().add_fields(log_record, record, message_dict)
         log_record["severity"] = record.levelname
+
+
+class ColoredFormatter(coloredlogs.ColoredFormatter):
+    custom_field_styles = deepcopy(coloredlogs.DEFAULT_FIELD_STYLES)
+    custom_field_styles.update({
+        "module": {"color": "white", "faint": True},
+        "funcName": {"color": "white", "faint": True},
+        "lineno": {"color": "white", "faint": True},
+    })
+
+    # Exposing logging.Formatter interface since we don't initialize this class by ourselves
+    def __init__(self, fmt=None, datefmt=None, style='%'):
+        super().__init__(fmt, datefmt, field_styles=self.custom_field_styles)
 
 
 class KeyValueRendererWithFlatEventColors:
@@ -224,9 +239,10 @@ class KeyValueRendererWithFlatEventColors:
             ev = str(ev)
 
         context = " ".join(
-            (ansi_wrap(key, **self.style_key) if self.color else key) +
-            "=" +
-            (ansi_wrap(repr(event_dict[key]), **self.style_val) if self.color else repr(event_dict[key]))
+            (ansi_wrap(key, **self.style_key) if self.color else key)
+            + "="
+            + (ansi_wrap(repr(event_dict[key]), **self.style_val) if self.color else repr(event_dict[key]))
+
             for key in event_dict.keys() if key != "exc_info"
         )
 

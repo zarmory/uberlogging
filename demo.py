@@ -7,12 +7,12 @@ import uberlogging
 def main():
     logger = uberlogging.get_logger()
 
-    # NOTE: using cache_structlog_logger=False JUST FOR DEMO to
-    # showcase style changes.
+    # NOTE: using cache_structlog_logger=False JUST FOR DEMO to showcase style changes.
 
     uberlogging.configure(cache_structlog_loggers=False)
     logger.info("Plain text, autoconfigured with %s", "defaults", text="foo", i=1)
     logging.getLogger("STDLIB").warn("Stdlib logger comming %s", "through")
+    logging.getLogger().debug("You should not see this line since root log level is INFO by default")
 
     uberlogging.configure(style=uberlogging.Style.text_color, cache_structlog_loggers=False)
     logger.info("Plain text, colors (forced)", text="foo", i=1)
