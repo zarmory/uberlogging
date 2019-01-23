@@ -33,9 +33,10 @@ simple_json_fmt_name = "simple_json"
 
 class Style(Enum):
     auto = 0
-    json = 1
-    text_color = 2
-    text_no_color = 3
+    text_auto = 1
+    json = 10
+    text_color = 20
+    text_no_color = 30
 
 
 style_to_fmt_name = {
@@ -150,11 +151,11 @@ def configure(style=Style.auto,
 
 
 def _detect_style(style):
-    if style != Style.auto:
+    if style not in (Style.auto, Style.text_auto):
         return style
 
     isatty = sys.stderr.isatty()
-    force_text = True if os.environ.get("UBERLOGGING_FORCE_TEXT") else False
+    force_text = True if os.environ.get("UBERLOGGING_FORCE_TEXT") else style == Style.text_auto
     use_json = not (isatty or force_text)
     colored = isatty and not use_json
 
