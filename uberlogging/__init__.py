@@ -24,7 +24,7 @@ __all__ = (
 )
 
 default_fmt = "{asctime}.{msecs:03.0f} " + \
-              "{name:<15} {levelname:<5} ## " + \
+              "{name:<15} {levelname:<7} ## " + \
               "{message}    {context}    {module}.{funcName}:{lineno}"
 default_datefmt = "%Y-%m-%dT%H:%M:%S"
 simple_fmt_name = "simple"
