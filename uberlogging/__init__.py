@@ -24,7 +24,7 @@ __all__ = (
 
 default_fmt = "%(asctime)s.%(msecs)03d: " + \
               "%(name)-15s %(levelname)-5s ## " + \
-              "%(message)s     %(module)s.%(funcName)s:%(lineno)d"
+              "%(message)s    %(context)s    %(module)s.%(funcName)s:%(lineno)d"
 default_datefmt = "%Y-%m-%dT%H:%M:%S"
 simple_fmt_name = "simple"
 simple_colors_fmt_name = "simple_colors"
@@ -54,7 +54,7 @@ def default_conf(fmt=default_fmt, datefmt=default_datefmt):
             simple_fmt_name: {
                 "format": fmt,
                 "datefmt": datefmt,
-                "class": "logging.Formatter",
+                "class": "uberlogging.Formatter",
             },
             simple_colors_fmt_name: {
                 "format": fmt,
@@ -214,7 +214,20 @@ class SeverityJsonFormatter(jsonlogger.JsonFormatter):
         log_record["severity"] = record.levelname
 
 
-class ColoredFormatter(coloredlogs.ColoredFormatter):
+class Formatter(logging.Formatter):
+    # Since we want to provide uniformity between stdlib and structlog
+    # We need to make sure that "context" attribute is always present
+    # in the log record - this is to enable using unified formatting style.
+    # If structlog is used it will inject the "context" as part of the
+    # "extra" dictionary. However if stdlib is used, we need to fullfil it
+    # "manually" here.
+    def format(self, record):
+        if not hasattr(record, "context"):
+            record.context = ""
+        return super().format(record)
+
+
+class ColoredFormatter(Formatter, coloredlogs.ColoredFormatter):
     custom_field_styles = deepcopy(coloredlogs.DEFAULT_FIELD_STYLES)
     custom_field_styles.update({
         "module": {"color": "white", "faint": True},
@@ -247,9 +260,4 @@ class KeyValueRendererWithFlatEventColors:
             for key in event_dict.keys() if key != "exc_info"
         )
 
-        event = "".join([
-            ev,
-            "    ",
-            context,
-        ])
-        return {"msg": event, "exc_info": event_dict.get("exc_info")}
+        return {"msg": ev, "exc_info": event_dict.get("exc_info"), "extra": {"context": context}}
