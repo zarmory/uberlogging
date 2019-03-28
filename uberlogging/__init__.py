@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import re
 import sys
 from copy import deepcopy
 from enum import Enum
@@ -22,9 +23,9 @@ __all__ = (
     "style",
 )
 
-default_fmt = "%(asctime)s.%(msecs)03d: " + \
-              "%(name)-15s %(levelname)-5s ## " + \
-              "%(message)s    %(context)s    %(module)s.%(funcName)s:%(lineno)d"
+default_fmt = "{asctime}.{msecs:03.0f} " + \
+              "{name:<15} {levelname:<5} ## " + \
+              "{message}    {context}    {module}.{funcName}:{lineno}"
 default_datefmt = "%Y-%m-%dT%H:%M:%S"
 simple_fmt_name = "simple"
 simple_colors_fmt_name = "simple_colors"
@@ -208,6 +209,9 @@ def _build_conf(fmt, datefmt, logger_confs, logger_confs_list, formatter_name, r
 
 
 class SeverityJsonFormatter(jsonlogger.JsonFormatter):
+    def parse(self):
+        return re.findall(r'{(.+?)[:}]', self._fmt, re.IGNORECASE)
+
     def add_fields(self, log_record, record, message_dict):
         # Fix for Stackdriver that expects loglevel in "severity" field
         super().add_fields(log_record, record, message_dict)
@@ -215,6 +219,11 @@ class SeverityJsonFormatter(jsonlogger.JsonFormatter):
 
 
 class Formatter(logging.Formatter):
+    # Requesting new Python3 style formatting
+    def __init__(self, fmt=None, datefmt=None, style="{", **kwargs):
+        style = "{"
+        super().__init__(fmt=fmt, datefmt=datefmt, style=style, **kwargs)
+
     # Since we want to provide uniformity between stdlib and structlog
     # We need to make sure that "context" attribute is always present
     # in the log record - this is to enable using unified formatting style.
@@ -236,8 +245,8 @@ class ColoredFormatter(Formatter, coloredlogs.ColoredFormatter):
     })
 
     # Exposing logging.Formatter interface since we don't initialize this class by ourselves
-    def __init__(self, fmt=None, datefmt=None, style='%'):
-        super().__init__(fmt, datefmt, field_styles=self.custom_field_styles)
+    def __init__(self, fmt=None, datefmt=None, style="{"):
+        super().__init__(fmt=fmt, datefmt=datefmt, style=style, field_styles=self.custom_field_styles)
 
 
 class KeyValueRendererWithFlatEventColors:
