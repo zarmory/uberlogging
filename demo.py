@@ -11,7 +11,7 @@ def main():
 
     uberlogging.configure(cache_structlog_loggers=False)
     logger.info("Plain text, autoconfigured with %s", "defaults", text="foo", i=1)
-    logging.getLogger("STDLIB").warn("Stdlib logger comming %s", "through")
+    logging.getLogger("STDLIB").warning("Stdlib logger comming %s", "through")
     logging.getLogger().debug("You should not see this line since root log level is INFO by default")
 
     uberlogging.configure(style=uberlogging.Style.text_color, cache_structlog_loggers=False)
@@ -41,7 +41,7 @@ def main():
     logger.info("Autoconfigured with forced text", text="foo", i=1)
     os.environ.unsetenv("UBERLOGGING_FORCE_TEXT")
 
-    uberlogging.configure(fmt="%(asctime)s %(levelname)s -- %(message)s",
+    uberlogging.configure(fmt="{asctime} {levelname} -- {message}",
                           datefmt="%H:%M:%S",
                           cache_structlog_loggers=False)
     logger.info("Custom format and timestamp", text="foo", i=1)
@@ -50,7 +50,7 @@ def main():
         "version": 1,
         "formatters": {
             "simple": {
-                "format": "<your format goes here> %(message)s",
+                "format": "<your format goes here> {message}",
                 "class": "logging.Formatter",
             },
         },
