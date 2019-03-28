@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
-import re
+import string
 import sys
 from copy import deepcopy
 from enum import Enum
@@ -210,7 +210,8 @@ def _build_conf(fmt, datefmt, logger_confs, logger_confs_list, formatter_name, r
 
 class SeverityJsonFormatter(jsonlogger.JsonFormatter):
     def parse(self):
-        return re.findall(r'{(.+?)[:}]', self._fmt, re.IGNORECASE)
+        field_spec = string.Formatter().parse(self._fmt)
+        return [s[1] for s in field_spec]
 
     def add_fields(self, log_record, record, message_dict):
         # Fix for Stackdriver that expects loglevel in "severity" field
