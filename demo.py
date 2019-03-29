@@ -45,7 +45,7 @@ def main():
 
     os.environ["UBERLOGGING_MESSAGE_FORMAT"] = "{asctime} {levelname} -> {message} | context: {context}"
     uberlogging.configure(cache_structlog_loggers=False)
-    logger.info(f"Format overriden trough environment variable", text="foo", i=1)
+    logger.info(f"Format overriden through environment variable", text="foo", i=1)
     del os.environ["UBERLOGGING_MESSAGE_FORMAT"]
 
     uberlogging.configure(fmt="{asctime} {levelname} -- {message}",
