@@ -11,7 +11,7 @@ Every project starts with burden of logging configuration.
 We want colors for interactive debugging, plain text in local
 dev when redirecting to file, and JSON when running in production
 with central log collection system. Finally, I like
-`structlog <http://www.structlog.org/en/stable/index.html>`_,
+`structlog <http://www.structlog.org/en/stable/>`_,
 but most of the libraries do not use it, so I need to configure
 both libraries in compatible way.
 

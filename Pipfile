@@ -8,6 +8,8 @@ name = "pypi"
 [dev-packages]
 bumpversion = "*"
 flake8 = "*"
+pygments = "*"
+"collective.checkdocs" = "*"
 
 [requires]
 python_version = "3.6"
