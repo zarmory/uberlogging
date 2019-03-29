@@ -23,6 +23,8 @@ __all__ = (
     "style",
 )
 
+# NOTE: Only "{" style is supported
+# "context" field is always provided (it's an empty string for stdlib logger")
 default_fmt = "{asctime}.{msecs:03.0f} " + \
               "{name:<15} {levelname:<7} ## " + \
               "{message}    {context}    {module}.{funcName}:{lineno}"
@@ -146,17 +148,25 @@ def configure(style=Style.auto,
     formatter_name = style_to_fmt_name[actual_style]
     colored = (actual_style == Style.text_color)
 
+    fmt = os.environ.get("UBERLOGGING_MESSAGE_FORMAT") or fmt
     conf = full_conf or _build_conf(fmt, datefmt, logger_confs, logger_confs_list, formatter_name, root_level)
     _configure_structlog(colored, cache_structlog_loggers)
     _configure_stdliblog(conf)
 
 
 def _detect_style(style):
+    if os.environ.get("UBERLOGGING_FORCE_TEXT_COLOR"):
+        style = Style.text_color
+    elif os.environ.get("UBERLOGGING_FORCE_TEXT_NO_COLOR"):
+        style = Style.text_no_color
+    elif os.environ.get("UBERLOGGING_FORCE_TEXT"):
+        style = Style.text_auto
+
     if style not in (Style.auto, Style.text_auto):
         return style
 
     isatty = sys.stderr.isatty()
-    force_text = True if os.environ.get("UBERLOGGING_FORCE_TEXT") else style == Style.text_auto
+    force_text = (style == Style.text_auto)
     use_json = not (isatty or force_text)
     colored = isatty and not use_json
 

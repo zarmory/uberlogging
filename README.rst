@@ -41,7 +41,7 @@ Usage
 That's all. You are ready to go. Simply import ``structlog`` or standard
 library's ``logging``, create your logger and start writing your app.
 
-For convenience, structlog's ``get_logging`` has been hoisted to uberlog:
+For convenience, structlog's ``get_logging`` has been hoisted to uberlogging:
 
 .. code:: python
 
@@ -51,6 +51,31 @@ For convenience, structlog's ``get_logging`` has been hoisted to uberlog:
 Define ``UBERLOGGING_FORCE_TEXT=1`` environment variable
 to force text output in non-tty streams. Useful for local environments when
 running your app with output redirection.
+
+Envrionment overrides
+#####################
+Sometimes people want things their own way and that's without changing actual code.
+To address that uberlogging provides ability to control some of it's configuration
+though environment variables:
+
+``UBERLOGGING_FORCE_TEXT``
+  Define to non-empty value to force textual (not JSON) output. Colouring is autodetected
+
+``UBERLOGGING_FORCE_TEXT_COLOR``
+  Same as above, but with with colours always *enabled*
+
+``UBERLOGGING_FORCE_TEXT_NO_COLOR``
+  Same as above, but with with colours always *disabled*
+
+``UBERLOGGING_MESSAGE_FORMAT``
+  String that overrides logging message format.
+  E.g. ``"{asctime} {levelname} {message}``. Note that only "{"
+  `styles <https://docs.python.org/3/howto/logging-cookbook.html#formatting-styles>`_
+  are supported.
+
+  On top of the stdlib fields uberlogging also provides ``context`` field that expands
+  to stringified context (key/value pairs) provided by structlog or an empty string if
+  stdlib logger is used.
 
 Where are tests?
 ################

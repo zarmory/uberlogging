@@ -36,10 +36,17 @@ def main():
     uberlogging.configure(cache_structlog_loggers=False, logger_confs_list=logger_confs_list)
     uberlogging.get_logger(lname).debug("Hierarchial logger config through list")
 
-    os.environ["UBERLOGGING_FORCE_TEXT"] = "1"
+    for suff in ["", "_COLOR", "_NO_COLOR"]:
+        env = "UBERLOGGING_FORCE_TEXT" + suff
+        os.environ[env] = "1"
+        uberlogging.configure(cache_structlog_loggers=False)
+        logger.info(f"Autoconfigured with {env}", text="foo", i=1)
+        del os.environ[env]
+
+    os.environ["UBERLOGGING_MESSAGE_FORMAT"] = "{asctime} {levelname} -> {message} | context: {context}"
     uberlogging.configure(cache_structlog_loggers=False)
-    logger.info("Autoconfigured with forced text", text="foo", i=1)
-    os.environ.unsetenv("UBERLOGGING_FORCE_TEXT")
+    logger.info(f"Format overriden trough environment variable", text="foo", i=1)
+    del os.environ["UBERLOGGING_MESSAGE_FORMAT"]
 
     uberlogging.configure(fmt="{asctime} {levelname} -- {message}",
                           datefmt="%H:%M:%S",
