@@ -89,8 +89,9 @@ def configure(style=Style.auto,
               logger_confs: dict = None,
               logger_confs_list: list = None,
               cache_structlog_loggers=True,
-              full_conf: dict = None,
-              root_level=logging.INFO):
+              root_level=logging.INFO,
+              stream=sys.stderr,
+              full_conf: dict = None):
     """
     Configure both structlog and stdlib logger libraries
     with sane defaults.
@@ -136,15 +137,23 @@ def configure(style=Style.auto,
         in `documentation <http://www.structlog.org/en/stable/performance.html>`_.
         You should generally leave it to True, unless, e.g. writing tests
 
+    :param root_level:
+        Set log level of the root logger. Defaults to logging.INFO.
+
+    :param stream:
+        Stream to use for logging.StreamHandler class. Defaults to sys.stderr. Useful
+        for programatic logging stream redirection in console scripts.
+
+        **NOTE:* Python 3.7+ only.
+
     :param full_conf:
         Provide your own dictConfig dictionary - hard override for everything except
         of structlog key-val formatting
-
-    :param root_level:
-        Set log level of the root logger. Defaults to logging.INFO.
     """
 
-    actual_style = _detect_style(style)
+    # FIXME: Check that full_conf is mutually exclusive with other conf params
+
+    actual_style = _detect_style(style, stream)
     formatter_name = style_to_fmt_name[actual_style]
     colored = (actual_style == Style.text_color)
 
@@ -153,8 +162,11 @@ def configure(style=Style.auto,
     _configure_structlog(colored, cache_structlog_loggers)
     _configure_stdliblog(conf)
 
+    if not full_conf:
+        _set_stream(stream)
 
-def _detect_style(style):
+
+def _detect_style(style, stream):
     if os.environ.get("UBERLOGGING_FORCE_TEXT_COLOR"):
         style = Style.text_color
     elif os.environ.get("UBERLOGGING_FORCE_TEXT_NO_COLOR"):
@@ -165,7 +177,11 @@ def _detect_style(style):
     if style not in (Style.auto, Style.text_auto):
         return style
 
-    isatty = sys.stderr.isatty()
+    try:
+        isatty = stream.isatty()
+    except AttributeError:
+        isatty = False
+
     force_text = (style == Style.text_auto)
     use_json = not (isatty or force_text)
     colored = isatty and not use_json
@@ -202,6 +218,10 @@ def _configure_structlog(colored, cache_loggers):
 
 def _configure_stdliblog(conf):
     dictConfig(conf)
+
+
+def _set_stream(stream):
+    logging.getLogger().handlers[0].setStream(stream)
 
 
 def _build_conf(fmt, datefmt, logger_confs, logger_confs_list, formatter_name, root_level):

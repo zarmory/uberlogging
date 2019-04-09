@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 
 import uberlogging
 
@@ -52,6 +53,14 @@ def main():
                           datefmt="%H:%M:%S",
                           cache_structlog_loggers=False)
     logger.info("Custom format and timestamp", text="foo", i=1)
+
+    class MyStream():
+        def write(self, s):
+            sys.stderr.write("[CUSTOM STREAM] ")
+            sys.stderr.write(s)
+    uberlogging.configure(stream=MyStream(), style=uberlogging.Style.text_auto,
+                          cache_structlog_loggers=False)
+    uberlogging.get_logger().info("Logging with custom stream", text="foo", i=1)
 
     full_conf = {
         "version": 1,
