@@ -98,17 +98,17 @@ def configure(style=Style.auto,
 
     :param style:
         Force custom style as in `uberlogging.Style`. Style is
-        autodetected by default
+        autodetected by default.
 
     :param fmt:
         Custom message formatting to use. In stdlib logging format.
         This is a shortcut to change configration quickly without
-        fiddling with logging configuration in full
+        fiddling with logging configuration in full.
 
     :param datefmt:
         Custom timestamp formatting to use. In stdlib logging format.
         This is a shortcut to change configuration quickly without
-        fiddling with logging configuration in full
+        fiddling with logging configuration in full.
 
     :param logger_confs:
         Configuration for additional loggers, e.g.::
@@ -122,7 +122,7 @@ def configure(style=Style.auto,
         The list will be converted to logger_confs dict (overriding existing key)
         The rationale is overcome limitation of configuration libraries that don't
         allow config property name to container ".", therefore inhibiting configuration
-        of hierarchical loggers
+        of hierarchical loggers.
 
         Example::
 
@@ -135,7 +135,7 @@ def configure(style=Style.auto,
     :param cache_structlog_loggers:
         Enable/disabled caching of structlog loggers as described
         in `documentation <http://www.structlog.org/en/stable/performance.html>`_.
-        You should generally leave it to True, unless, e.g. writing tests
+        You should generally leave it to True, unless, e.g. writing tests.
 
     :param root_level:
         Set log level of the root logger. Defaults to logging.INFO.
@@ -148,10 +148,8 @@ def configure(style=Style.auto,
 
     :param full_conf:
         Provide your own dictConfig dictionary - hard override for everything except
-        of structlog key-val formatting
+        of structlog key-val formatting.
     """
-
-    # FIXME: Check that full_conf is mutually exclusive with other conf params
 
     actual_style = _detect_style(style, stream)
     formatter_name = style_to_fmt_name[actual_style]
