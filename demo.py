@@ -57,7 +57,7 @@ def main():
         "version": 1,
         "formatters": {
             "simple": {
-                "format": "<your format goes here> {message}",
+                "format": "<your format goes here> %(message)s",
                 "class": "logging.Formatter",
             },
         },
