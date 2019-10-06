@@ -42,46 +42,12 @@ class Style(Enum):
     text_no_color = 30
 
 
-style_to_fmt_name = {
-    Style.json: simple_json_fmt_name,
-    Style.text_color: simple_colors_fmt_name,
-    Style.text_no_color: simple_fmt_name,
-}
-
-
-def default_conf(fmt=default_fmt, datefmt=default_datefmt):
+def style_to_formatter(style):
     return {
-        "version": 1,
-        "disable_existing_loggers": False,
-        "formatters": {
-            simple_fmt_name: {
-                "format": fmt,
-                "datefmt": datefmt,
-                "class": "uberlogging.Formatter",
-            },
-            simple_colors_fmt_name: {
-                "format": fmt,
-                "datefmt": datefmt,
-                "class": "uberlogging.ColoredFormatter",
-            },
-            simple_json_fmt_name: {
-                "format": fmt,
-                "datefmt": datefmt,
-                "class": "uberlogging.SeverityJsonFormatter",
-            }
-        },
-        "handlers": {
-            "console": {
-                "level": "DEBUG",
-                "class": "logging.StreamHandler",
-                "formatter": simple_fmt_name,
-            }
-        },
-        "root": {
-            "level": None,
-            "handlers": ["console"],
-        },
-    }
+        Style.json: SeverityJsonFormatter,
+        Style.text_color: ColoredFormatter,
+        Style.text_no_color: Formatter,
+    }.get(style)
 
 
 def configure(style=Style.auto,
@@ -152,11 +118,10 @@ def configure(style=Style.auto,
     """
 
     actual_style = _detect_style(style, stream)
-    formatter_name = style_to_fmt_name[actual_style]
     colored = (actual_style == Style.text_color)
 
     fmt = os.environ.get("UBERLOGGING_MESSAGE_FORMAT") or fmt
-    conf = full_conf or _build_conf(fmt, datefmt, logger_confs, logger_confs_list, formatter_name, root_level)
+    conf = full_conf or _build_conf(fmt, datefmt, logger_confs, logger_confs_list, actual_style, root_level)
     _configure_structlog(colored, cache_structlog_loggers)
     _configure_stdliblog(conf)
 
@@ -222,17 +187,35 @@ def _set_stream(stream):
     logging.getLogger().handlers[0].setStream(stream)
 
 
-def _build_conf(fmt, datefmt, logger_confs, logger_confs_list, formatter_name, root_level):
-    conf = default_conf(fmt, datefmt)
-    logger_confs = logger_confs or {}
+def _build_conf(fmt, datefmt, logger_confs, logger_confs_list, style: Style, root_level):
+    formatter_class = style_to_formatter(style)
+    formatter = formatter_class(fmt=fmt, datefmt=datefmt)
+    conf = {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {
+            "current": {
+                "()": lambda: formatter,
+            },
+        },
+        "handlers": {
+            "console": {
+                "level": "DEBUG",
+                "class": "logging.StreamHandler",
+                "formatter": "current",
+            }
+        },
+        "root": {
+            "level": logging.getLevelName(root_level),
+            "handlers": ["console"],
+        },
+    }
+    logger_confs = {}
     for lconf in (logger_confs_list or []):
         name = lconf.pop("name")
         logger_confs[name] = lconf
     if logger_confs:
         conf["loggers"] = logger_confs
-    for handler in conf["handlers"].values():
-        handler["formatter"] = formatter_name
-    conf["root"]["level"] = logging.getLevelName(root_level)
     return conf
 
 
