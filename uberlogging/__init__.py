@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 
+import logging
 import os
 import string
 import sys
 from contextvars import ContextVar
-from dataclasses import dataclass
 from copy import deepcopy
+from dataclasses import dataclass
 from enum import Enum
-import logging
 from logging.config import dictConfig
 from typing import Any, ClassVar, List, Tuple
 
@@ -16,7 +16,6 @@ import structlog
 from humanfriendly.terminal import ansi_wrap
 from pythonjsonlogger import jsonlogger
 from structlog import get_logger
-
 
 __all__ = (
     "get_logger",
