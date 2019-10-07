@@ -60,8 +60,7 @@ def configure(style=Style.auto,
               cache_structlog_loggers=True,
               root_level=logging.INFO,
               stream=sys.stderr,
-              contextvars: Tuple[ContextVar] = (),
-              full_conf: dict = None):
+              contextvars: Tuple[ContextVar] = ()):
     """
     Configure both structlog and stdlib logger libraries
     with sane defaults.
@@ -91,7 +90,7 @@ def configure(style=Style.auto,
         Configuration for additional loggers in list format.
         The list will be converted to logger_confs dict (overriding existing key)
         The rationale is overcome limitation of configuration libraries that don't
-        allow config property name to container ".", therefore inhibiting configuration
+        allow config property name to contain ".", therefore inhibiting configuration
         of hierarchical loggers.
 
         Example::
@@ -122,17 +121,13 @@ def configure(style=Style.auto,
 
         **NOTE:* Python 3.7.1+ only.
 
-    :param full_conf:
-        Provide your own dictConfig dictionary - hard override for everything except
-        of structlog key-val formatting.
     """
 
     actual_style = _detect_style(style, stream)
     colored = (actual_style == Style.text_color)
 
     fmt = os.environ.get("UBERLOGGING_MESSAGE_FORMAT") or fmt
-    conf = full_conf or _build_conf(fmt, datefmt, logger_confs, logger_confs_list, actual_style,
-                                    root_level, contextvars, stream)
+    conf = _build_conf(fmt, datefmt, logger_confs, logger_confs_list, actual_style, root_level, contextvars, stream)
     _configure_structlog(colored, cache_structlog_loggers)
     _configure_stdliblog(conf)
 

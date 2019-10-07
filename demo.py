@@ -63,29 +63,6 @@ def main():
                           cache_structlog_loggers=False)
     uberlogging.get_logger().info("Logging with custom stream", text="foo", i=1)
 
-    full_conf = {
-        "version": 1,
-        "formatters": {
-            "simple": {
-                "format": "<your format goes here> %(message)s",
-                "class": "logging.Formatter",
-            },
-        },
-        "handlers": {
-            "console": {
-                "level": "INFO",
-                "class": "logging.StreamHandler",
-                "formatter": "simple",
-            }
-        },
-        "root": {
-            "level": "INFO",
-            "handlers": ["console"],
-        },
-    }
-    uberlogging.configure(full_conf=full_conf, cache_structlog_loggers=False)
-    logging.getLogger("FULLCONF").info("Fully custom formatting")
-
     # Contextvars demo
     ctxvar: ContextVar[str] = ContextVar("request_id")
     uberlogging.configure(contextvars=(ctxvar,), cache_structlog_loggers=False)
@@ -96,6 +73,7 @@ def main():
         logger.info("Child context handling request", payload="bar")
         uberlogging.configure(contextvars=(ctxvar,),
                               style=uberlogging.Style.json, cache_structlog_loggers=False)
+        print("ctxvar value", ctxvar.get())
         logger.info("Child context finishing request (JSON mode)")
 
     ctx: Context = copy_context()
