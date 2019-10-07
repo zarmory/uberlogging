@@ -10,6 +10,8 @@ bumpversion = "*"
 flake8 = "*"
 pygments = "*"
 "collective.checkdocs" = "*"
+restview = "*"
+isort = "*"
 
 [requires]
 python_version = "3.7"
