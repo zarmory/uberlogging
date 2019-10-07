@@ -15,7 +15,6 @@ import coloredlogs
 import structlog
 from humanfriendly.terminal import ansi_wrap
 from pythonjsonlogger import jsonlogger
-from structlog import get_logger
 
 __all__ = (
     "get_logger",
@@ -34,6 +33,12 @@ default_datefmt = "%Y-%m-%dT%H:%M:%S"
 simple_fmt_name = "simple"
 simple_colors_fmt_name = "simple_colors"
 simple_json_fmt_name = "simple_json"
+
+
+def get_logger(*args, **kwargs) -> None:
+    raise AttributeError("uberlogging.get_logger() was deprecated and removed. "
+                         + "It did nothing but hoisting structlog.get_logger. "
+                         + "So just that instead.")
 
 
 class Style(Enum):

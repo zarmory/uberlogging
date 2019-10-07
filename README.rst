@@ -44,11 +44,10 @@ Usage
 That's all. You are ready to go. Simply import ``structlog`` or standard
 library's ``logging``, create your logger and start writing your app.
 
-For convenience, structlog's ``get_logging`` has been hoisted to uberlogging:
-
 .. code:: python
 
-  logger = uberlogging.get_logger("main")
+  import structlog
+  logger = structlog.get_logger("main")
   logger.info("Rocky road", to="Dublin")
 
 Define ``UBERLOGGING_FORCE_TEXT=1`` environment variable
