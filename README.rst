@@ -3,7 +3,10 @@ Uberlogging - Python logging the way I like it
 **********************************************
 
 Highly opinionated wrapper/configuration around
-`structlog <http://www.structlog.org/en/stable/>`_.
+`structlog <http://www.structlog.org/en/stable/>`_ and stdlib logger.
+
+Python 3.7.1+ only unless you install
+`contextvars backport <https://pypi.org/project/contextvars/>`_.
 
 Why
 ###
@@ -55,7 +58,7 @@ running your app with output redirection.
 Envrionment overrides
 #####################
 Sometimes people want things their own way and that's without changing actual code.
-To address that uberlogging provides ability to control some of it's configuration
+To address that uberlogging provides ability to control some of its configuration
 though environment variables:
 
 ``UBERLOGGING_FORCE_TEXT``
@@ -76,6 +79,45 @@ though environment variables:
   On top of the stdlib fields uberlogging also provides ``context`` field that expands
   to stringified context (key/value pairs) provided by structlog or an empty string if
   stdlib logger is used.
+
+Contextual logging
+##################
+Structlogs's ``logger.bind(request_id="foo")`` is great for simple things but when you have
+multi-layer request handling, passing the same instance of bound logger is a). cumbersome and
+b). requires the same logger to be using by everything that hangles the request.
+
+I've long missed log4cxx `Nested Diagnostic Contexts <https://logging.apache.org/log4cxx/latest_stable/usage.html#Nested_Diagnostic_Contexts>`_
+in Python and now with contextvars we can finally achieve that. The best part is that it
+works both in threaded and asyncio code!
+
+If never heard of contextvars, please read official
+`documentation <https://docs.python.org/3/library/contextvars.html>`_. In the nutshell
+it "kinda" replaces thread local storage and is natively supported in asyncio, i.e.
+it's both thread-safe and concurrent safe.
+
+To employ contextvars in uberlogging you need to:
+
+* Create a contextvar somewhere in your code
+* Pass this context var to ``uberlogging.configure()``
+* Set contextvar values whenever your like and all subsequent log messages will
+  have its value redenred as part of the ``context`` extra section (the same one
+  where structlog context end into)
+
+Here is an example:
+
+.. include:: examples/context_vars.py
+:code: python
+
+This code will produce the following::
+
+  2019-10-07T13:41:17.669 __main__        INFO    ## Main server handling two requests        ctx.server:17
+  2019-10-07T13:41:17.669 __main__        INFO    ## Handling request    request_id='Zf1glE'    ctx.handle_request:13
+  2019-10-07T13:41:17.669 __main__        INFO    ## Handling request    request_id='YcEf73'    ctx.handle_request:13
+  2019-10-07T13:41:17.669 __main__        INFO    ## Main server done        ctx.server:21
+
+Note that logger invocations inside the request handler do not mention any ``request_id`` - it's
+injected by logging formatter from the context.
+
 
 Where are tests?
 ################
