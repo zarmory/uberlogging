@@ -3,10 +3,13 @@
 import os
 import string
 import sys
+from contextvars import ContextVar
+from dataclasses import dataclass
 from copy import deepcopy
 from enum import Enum
 import logging
 from logging.config import dictConfig
+from typing import Any, ClassVar, List, Tuple
 
 import coloredlogs
 import structlog
@@ -57,6 +60,7 @@ def configure(style=Style.auto,
               cache_structlog_loggers=True,
               root_level=logging.INFO,
               stream=sys.stderr,
+              contextvars: Tuple[ContextVar] = (),
               full_conf: dict = None):
     """
     Configure both structlog and stdlib logger libraries
@@ -112,6 +116,12 @@ def configure(style=Style.auto,
 
         **NOTE:* Python 3.7+ only.
 
+    :param contextvars:
+        Provided contextvars name/value will be added as part of the log message
+        (via "context" section).
+
+        **NOTE:* Python 3.7.1+ only.
+
     :param full_conf:
         Provide your own dictConfig dictionary - hard override for everything except
         of structlog key-val formatting.
@@ -121,12 +131,10 @@ def configure(style=Style.auto,
     colored = (actual_style == Style.text_color)
 
     fmt = os.environ.get("UBERLOGGING_MESSAGE_FORMAT") or fmt
-    conf = full_conf or _build_conf(fmt, datefmt, logger_confs, logger_confs_list, actual_style, root_level)
+    conf = full_conf or _build_conf(fmt, datefmt, logger_confs, logger_confs_list, actual_style,
+                                    root_level, contextvars, stream)
     _configure_structlog(colored, cache_structlog_loggers)
     _configure_stdliblog(conf)
-
-    if not full_conf:
-        _set_stream(stream)
 
 
 def _detect_style(style, stream):
@@ -168,7 +176,7 @@ def _configure_structlog(colored, cache_loggers):
         # (both local and aggregated, e.g. Graylog) since fields
         # are highly dynamic and I prefer to track important stuff through
         # metrics
-        KeyValueRendererWithFlatEventColors(colored),
+        KeyValueRendererWithFlatEventColors(renderer=ContextRenderer(colored)),
     ]
 
     structlog.configure(
@@ -183,13 +191,9 @@ def _configure_stdliblog(conf):
     dictConfig(conf)
 
 
-def _set_stream(stream):
-    logging.getLogger().handlers[0].setStream(stream)
-
-
-def _build_conf(fmt, datefmt, logger_confs, logger_confs_list, style: Style, root_level):
+def _build_conf(fmt, datefmt, logger_confs, logger_confs_list, style: Style, root_level, contextvars, stream):
     formatter_class = style_to_formatter(style)
-    formatter = formatter_class(fmt=fmt, datefmt=datefmt)
+    formatter = formatter_class(fmt=fmt, datefmt=datefmt, contextvars=contextvars)
     conf = {
         "version": 1,
         "disable_existing_loggers": False,
@@ -203,6 +207,7 @@ def _build_conf(fmt, datefmt, logger_confs, logger_confs_list, style: Style, roo
                 "level": "DEBUG",
                 "class": "logging.StreamHandler",
                 "formatter": "current",
+                "stream": stream
             }
         },
         "root": {
@@ -220,6 +225,12 @@ def _build_conf(fmt, datefmt, logger_confs, logger_confs_list, style: Style, roo
 
 
 class SeverityJsonFormatter(jsonlogger.JsonFormatter):
+
+    def __init__(self, *args, contextvars: Tuple[ContextVar] = (), **kwargs):
+        self.contextvars = contextvars
+        self.renderer = kwargs.pop("renderer", ContextRenderer(color=False))
+        super().__init__(*args, **kwargs)
+
     def parse(self):
         field_spec = string.Formatter().parse(self._fmt)
         return [s[1] for s in field_spec]
@@ -229,11 +240,20 @@ class SeverityJsonFormatter(jsonlogger.JsonFormatter):
         super().add_fields(log_record, record, message_dict)
         log_record["severity"] = record.levelname
 
+    def format(self, record):
+        if self.contextvars:
+            record.context = " ".join(
+                s for s in (getattr(record, "context", ""), self.renderer.render_contextvars(self.contextvars)) if s
+            )
+        return super().format(record)
+
 
 class Formatter(logging.Formatter):
     # Requesting new Python3 style formatting
-    def __init__(self, fmt=None, datefmt=None, style="{", **kwargs):
+    def __init__(self, fmt=None, datefmt=None, style="{", contextvars: Tuple[ContextVar] = (), **kwargs):
         style = "{"
+        self.contextvars = contextvars
+        self.renderer = kwargs.pop("renderer", ContextRenderer(color=False))
         super().__init__(fmt=fmt, datefmt=datefmt, style=style, **kwargs)
 
     # Since we want to provide uniformity between stdlib and structlog
@@ -245,6 +265,10 @@ class Formatter(logging.Formatter):
     def format(self, record):
         if not hasattr(record, "context"):
             record.context = ""
+        if self.contextvars:
+            record.context = " ".join(
+                s for s in (getattr(record, "context", ""), self.renderer.render_contextvars(self.contextvars)) if s
+            )
         return super().format(record)
 
 
@@ -257,16 +281,39 @@ class ColoredFormatter(Formatter, coloredlogs.ColoredFormatter):
     })
 
     # Exposing logging.Formatter interface since we don't initialize this class by ourselves
-    def __init__(self, fmt=None, datefmt=None, style="{"):
-        super().__init__(fmt=fmt, datefmt=datefmt, style=style, field_styles=self.custom_field_styles)
+    def __init__(self, fmt=None, datefmt=None, style="{", contextvars: Tuple[ContextVar] = (), **kwargs):
+        renderer = kwargs.pop("renderer", ContextRenderer(color=True))
+        super().__init__(fmt=fmt, datefmt=datefmt, style=style,
+                         field_styles=self.custom_field_styles,
+                         contextvars=contextvars, renderer=renderer, **kwargs)
 
 
+@dataclass
+class ContextRenderer:
+    style_key: ClassVar[dict] = {"color": "cyan"}
+    style_val: ClassVar[dict] = {"color": "magenta"}
+
+    color: bool
+
+    def format_item(self, key: str, val: Any) -> str:
+        return "{}={}".format(
+            (ansi_wrap(key, **self.style_key) if self.color else key),
+            (ansi_wrap(repr(val), **self.style_val) if self.color else repr(val))
+        )
+
+    def render_contextvars(self, vars: Tuple[ContextVar]) -> str:
+        ctx_items: List[str] = []
+        for var in vars:
+            try:
+                ctx_items.append(self.format_item(var.name, var.get()))
+            except LookupError:  # contextvar is not set - ignoring
+                continue
+        return " ".join(ctx_items)
+
+
+@dataclass
 class KeyValueRendererWithFlatEventColors:
-    style_key = {"color": "cyan"}
-    style_val = {"color": "magenta"}
-
-    def __init__(self, color=True):
-        self.color = color
+    renderer: ContextRenderer
 
     def __call__(self, _, __, event_dict):
         ev = event_dict.pop("event") if "event" in event_dict else ""
@@ -274,11 +321,9 @@ class KeyValueRendererWithFlatEventColors:
             ev = str(ev)
 
         context = " ".join(
-            (ansi_wrap(key, **self.style_key) if self.color else key)
-            + "="
-            + (ansi_wrap(repr(event_dict[key]), **self.style_val) if self.color else repr(event_dict[key]))
+            self.renderer.format_item(key, val)
 
-            for key in event_dict.keys() if key != "exc_info"
+            for key, val in event_dict.items() if key != "exc_info"
         )
 
         return {"msg": ev, "exc_info": event_dict.get("exc_info"), "extra": {"context": context}}

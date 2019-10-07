@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+from contextvars import Context, ContextVar, copy_context
 
 import uberlogging
 
@@ -84,6 +85,23 @@ def main():
     }
     uberlogging.configure(full_conf=full_conf, cache_structlog_loggers=False)
     logging.getLogger("FULLCONF").info("Fully custom formatting")
+
+    # Contextvars demo
+    ctxvar: ContextVar[str] = ContextVar("request_id")
+    uberlogging.configure(contextvars=(ctxvar,), cache_structlog_loggers=False)
+    logger.info("Main context - no contextvar value is set")
+
+    def _process_request():
+        ctxvar.set("CoqIqNGc3BW")
+        logger.info("Child context handling request", payload="bar")
+        uberlogging.configure(contextvars=(ctxvar,),
+                              style=uberlogging.Style.json, cache_structlog_loggers=False)
+        logger.info("Child context finishing request (JSON mode)")
+
+    ctx: Context = copy_context()
+    ctx.run(_process_request)
+
+    logger.info("Main context finished - no contextvar value is set")
 
 
 if __name__ == "__main__":
