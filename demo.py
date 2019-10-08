@@ -3,11 +3,12 @@ import os
 import sys
 from contextvars import Context, ContextVar, copy_context
 
+import structlog
 import uberlogging
 
 
 def main():
-    logger = uberlogging.get_logger()
+    logger = structlog.get_logger()
 
     # NOTE: using cache_structlog_logger=False JUST FOR DEMO to showcase style changes.
 
@@ -28,7 +29,7 @@ def main():
     dbgl = "dbg"
     logger_confs = {dbgl: {"level": "DEBUG"}}
     uberlogging.configure(cache_structlog_loggers=False, logger_confs=logger_confs)
-    uberlogging.get_logger(dbgl).debug("This particular logger is in debug level", text="foo", i=1)
+    structlog.get_logger(dbgl).debug("This particular logger is in debug level", text="foo", i=1)
 
     lname = "parent.child"
     logger_confs_list = [dict(
@@ -36,7 +37,7 @@ def main():
         level="DEBUG",
     )]
     uberlogging.configure(cache_structlog_loggers=False, logger_confs_list=logger_confs_list)
-    uberlogging.get_logger(lname).debug("Hierarchial logger config through list")
+    structlog.get_logger(lname).debug("Hierarchial logger config through list")
 
     for suff in ["", "_COLOR", "_NO_COLOR"]:
         env = "UBERLOGGING_FORCE_TEXT" + suff
@@ -61,7 +62,7 @@ def main():
             sys.stderr.write(s)
     uberlogging.configure(stream=MyStream(), style=uberlogging.Style.text_auto,
                           cache_structlog_loggers=False)
-    uberlogging.get_logger().info("Logging with custom stream", text="foo", i=1)
+    structlog.get_logger().info("Logging with custom stream", text="foo", i=1)
 
     # Contextvars demo
     ctxvar: ContextVar[str] = ContextVar("request_id")
@@ -71,6 +72,7 @@ def main():
     def _process_request():
         ctxvar.set("CoqIqNGc3BW")
         logger.info("Child context handling request", payload="bar")
+        logger.info("Child context finishing request")
         uberlogging.configure(contextvars=(ctxvar,),
                               style=uberlogging.Style.json, cache_structlog_loggers=False)
         print("ctxvar value", ctxvar.get())
