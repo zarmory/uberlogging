@@ -5,7 +5,7 @@ Uberlogging - Python logging the way I like it
 Highly opinionated wrapper/configuration around
 `structlog <http://www.structlog.org/en/stable/>`_ and stdlib logger.
 
-Python 3.7.1+ only.
+Python 3.7+ only. To use contextvar, minimum Python 3.7.1 is required.
 
 Why
 ###
