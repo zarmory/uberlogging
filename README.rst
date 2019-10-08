@@ -5,8 +5,7 @@ Uberlogging - Python logging the way I like it
 Highly opinionated wrapper/configuration around
 `structlog <http://www.structlog.org/en/stable/>`_ and stdlib logger.
 
-Python 3.7.1+ only unless you install
-`contextvars backport <https://pypi.org/project/contextvars/>`_.
+Python 3.7.1+ only.
 
 Why
 ###
