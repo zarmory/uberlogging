@@ -26,13 +26,12 @@ __all__ = (
 
 # NOTE: Only "{" style is supported
 # "context" field is always provided (it's an empty string for stdlib logger")
-default_fmt = "{asctime}.{msecs:03.0f} " + \
-              "{name:<15} {levelname:<7} ## " + \
-              "{message}    {context}    {module}.{funcName}:{lineno}"
+default_fmt = ("{asctime}.{msecs:03.0f} "
+               + "{name:<15} {levelname:<7} ## "
+               + "{message}{context}{contextvars}    {module}.{funcName}:{lineno}")
 default_datefmt = "%Y-%m-%dT%H:%M:%S"
-simple_fmt_name = "simple"
-simple_colors_fmt_name = "simple_colors"
-simple_json_fmt_name = "simple_json"
+
+padding = "    "
 
 
 def get_logger(*args, **kwargs) -> None:
@@ -103,7 +102,6 @@ def configure(style=Style.auto,
                 {"name": "foo", "level": "INFO"},
                 {"name": "foo.bar", "level": "ERROR"},
             }
-
 
     :param cache_structlog_loggers:
         Enable/disabled caching of structlog loggers as described
@@ -239,9 +237,7 @@ class SeverityJsonFormatter(jsonlogger.JsonFormatter):
 
     def format(self, record):
         if self.contextvars:
-            record.context = " ".join(
-                s for s in (getattr(record, "context", ""), self.renderer.render_contextvars(self.contextvars)) if s
-            )
+            record.contextvars = self.renderer.render_contextvars(self.contextvars)
         return super().format(record)
 
 
@@ -258,14 +254,15 @@ class Formatter(logging.Formatter):
     # in the log record - this is to enable using unified formatting style.
     # If structlog is used it will inject the "context" as part of the
     # "extra" dictionary. However if stdlib is used, we need to fullfil it
-    # "manually" here.
+    # "manually" here. Same for "contextvars" attribute.
     def format(self, record):
         if not hasattr(record, "context"):
             record.context = ""
         if self.contextvars:
-            record.context = " ".join(
-                s for s in (getattr(record, "context", ""), self.renderer.render_contextvars(self.contextvars)) if s
-            )
+            record.contextvars = ((" " if record.context else padding)
+                                  + self.renderer.render_contextvars(self.contextvars))
+        else:
+            record.contextvars = ""
         return super().format(record)
 
 
@@ -322,5 +319,8 @@ class KeyValueRendererWithFlatEventColors:
 
             for key, val in event_dict.items() if key != "exc_info"
         )
+
+        if context:
+            context = padding + context
 
         return {"msg": ev, "exc_info": event_dict.get("exc_info"), "extra": {"context": context}}
