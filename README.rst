@@ -40,8 +40,8 @@ Usage
   import uberlogging
   uberlogging.configure()
 
-That's all. You are ready to go. Simply import ``structlog`` or standard
-library's ``logging``, create your logger and start writing your app.
+That's all. You are ready to go. Simply import ``structlog`` or stdlib
+``logging``, create your logger and start writing your app.
 
 .. code:: python
 
@@ -52,6 +52,19 @@ library's ``logging``, create your logger and start writing your app.
 Define ``UBERLOGGING_FORCE_TEXT=1`` environment variable
 to force text output in non-tty streams. Useful for local environments when
 running your app with output redirection.
+
+Formatting
+##########
+Structlog's context (key/value pairs passed to logging call) is rendered as
+``<key1>=<value1> <key2>=<value2>`` (or empty string otherwise) and is
+available as ``{context}`` formatting variable. If non empty it will be
+4-space padded (yes, it's not generic, but I find it very convenient with
+the default configuration).
+
+If you employ contextvars, they will be rendered similarly and available as
+``{contextvars}}`` formatting variable. Similarly, it's either single or
+4-space padded depending whether exists non-empty structlog context for the
+current log record. See dedicated section on contextvars below.
 
 Envrionment overrides
 #####################
@@ -74,21 +87,17 @@ though environment variables:
   `styles <https://docs.python.org/3/howto/logging-cookbook.html#formatting-styles>`_
   are supported.
 
-  On top of the stdlib fields uberlogging also provides ``context`` field that expands
-  to stringified context (key/value pairs) provided by structlog or an empty string if
-  stdlib logger is used.
-
 Contextual logging
 ##################
 Structlogs's ``logger.bind(request_id="foo")`` is great for simple things but when you have
 multi-layer request handling, passing the same instance of bound logger is a). cumbersome and
-b). requires the same logger to be using by everything that hangles the request.
+b). requires the same logger to be used by everything that handles the request.
 
 I've long missed log4cxx `Nested Diagnostic Contexts <https://logging.apache.org/log4cxx/latest_stable/usage.html#Nested_Diagnostic_Contexts>`_
 in Python and now with contextvars we can finally achieve that. The best part is that it
 works both in threaded and asyncio code!
 
-If never heard of contextvars, please read official
+If you never heard of contextvars, please read official
 `documentation <https://docs.python.org/3/library/contextvars.html>`_. In the nutshell
 it "kinda" replaces thread local storage and is natively supported in asyncio, i.e.
 it's both thread-safe and concurrent safe.
@@ -98,8 +107,7 @@ To employ contextvars in uberlogging you need to:
 * Create a contextvar somewhere in your code
 * Pass this context var to ``uberlogging.configure()``
 * Set contextvar values whenever your like and all subsequent log messages will
-  have its value redenred as part of the ``context`` extra section (the same one
-  where structlog context end into)
+  have its value rendered as part of the ``contextvar`` extra section
 
 Here is an example:
 
@@ -133,10 +141,10 @@ Here is an example:
 
 This code will produce the following::
 
-  2019-10-07T13:41:17.669 __main__        INFO    ## Main server handling two requests        ctx.server:17
+  2019-10-07T13:41:17.669 __main__        INFO    ## Main server handling two requests   ctx.server:17
   2019-10-07T13:41:17.669 __main__        INFO    ## Handling request    request_id='Zf1glE'    ctx.handle_request:13
   2019-10-07T13:41:17.669 __main__        INFO    ## Handling request    request_id='YcEf73'    ctx.handle_request:13
-  2019-10-07T13:41:17.669 __main__        INFO    ## Main server done        ctx.server:21
+  2019-10-07T13:41:17.669 __main__        INFO    ## Main server done    ctx.server:21
 
 Note that logger invocations inside the request handler do not mention any ``request_id`` - it's
 injected by logging formatter from the context.
