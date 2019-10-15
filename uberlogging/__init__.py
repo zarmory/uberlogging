@@ -117,7 +117,7 @@ def configure(style=Style.auto,
 
     :param contextvars:
         Provided contextvars name/value will be added as part of the log message
-        (via "context" section).
+        (via "contextvars" section).
 
         **NOTE**: Python 3.7.1+ only. ContextVar.name didn't appear till then.
 
