@@ -210,7 +210,7 @@ def _build_conf(fmt, datefmt, logger_confs, logger_confs_list, style: Style, roo
             "handlers": ["console"],
         },
     }
-    logger_confs = {}
+    logger_confs = logger_confs or {}
     for lconf in (logger_confs_list or []):
         name = lconf.pop("name")
         logger_confs[name] = lconf
