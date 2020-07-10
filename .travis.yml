@@ -1,0 +1,18 @@
+language: python
+
+install:
+  - pip install pipenv
+  - pipenv install --dev
+  - pip install -e .
+
+jobs:
+  include:
+    - stage: lint
+      script: pre-commit run --all-files
+      python: "3.7"
+
+    - stage: test
+      script: ./demo.sh
+      python: "3.7"
+    - script: ./demo.sh
+      python: "3.8"
