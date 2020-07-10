@@ -10,7 +10,7 @@ with open("LICENSE") as f:
 
 setup(
     name="uberlogging",
-    version="0.6.3",
+    version="0.7.0",
     description="Highly opinionated logging configurator",
     long_description=readme,
     author="Zaar Hai",
