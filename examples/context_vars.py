@@ -2,6 +2,7 @@ import asyncio
 from contextvars import ContextVar
 
 import structlog
+
 import uberlogging
 
 ctx_request_id: ContextVar = ContextVar("request_id")
@@ -19,6 +20,7 @@ async def server():
     t2 = asyncio.create_task(handle_request("YcEf73"))
     await asyncio.wait((t1, t2))
     logger.info("Main server done")
+
 
 if __name__ == "__main__":
     uberlogging.configure(contextvars=(ctx_request_id,))

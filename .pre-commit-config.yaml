@@ -1,0 +1,52 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+default_language_version:
+  python: python3.7  # Stay on 3.7 since this is the minimal we support
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.1.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-json
+      - id: check-docstring-first
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: check-executables-have-shebangs
+      - id: mixed-line-ending
+      - id: detect-private-key
+  - repo: https://gitlab.com/pycqa/flake8
+    rev: 3.8.3
+    hooks:
+      - id: flake8
+  - repo: https://github.com/pre-commit/mirrors-isort
+    rev: v5.0.3
+    hooks:
+      - id: isort
+        additional_dependencies: ["toml"]  # To parse our pyproject.toml
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: v1.5.1
+    hooks:
+      - id: python-use-type-annotations
+      - id: python-check-blanket-noqa
+      - id: python-no-eval
+  - repo: https://github.com/syntaqx/git-hooks
+    rev: v0.0.16
+    hooks:
+      - id: shellcheck
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.23.0
+    hooks:
+      - id: yamllint
+# Still not ready for black. Lots of code parts are formatted for readability
+# in a way that is incompatible with black
+#   - repo: https://github.com/psf/black
+#     rev: 19.10b0
+#     hooks:
+#       - id: black
+#         exclude: setup.py
+  - repo: https://github.com/haizaar/check-pipfile-lock
+    rev: v0.0.4
+    hooks:
+      - id: check-pipfile-lock

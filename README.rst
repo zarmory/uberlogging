@@ -156,4 +156,10 @@ No tests, only deadlines :)
 Seriously though, there is ``demo.sh`` script that's good enough for now, since
 this library is not going to see much of a development.
 
-Tested on Python3.6+ only! Stream configuration only works on Python 3.7+.
+Development
+###########
+.. code-block:: shell
+
+  echo 'layout pipenv' > .envrc
+  direnv allow  # will take a while
+  make bootstrap
