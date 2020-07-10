@@ -2,6 +2,15 @@
 Uberlogging - Python logging the way I like it
 **********************************************
 
+.. image:: https://img.shields.io/pypi/v/uberlogging.svg
+    :target: https://pypi.python.org/pypi/uberlogging
+
+.. image:: https://img.shields.io/travis/haizaar/uberlogging.svg
+        :target: https://travis-ci.org/haizaar/uberlogging
+
+.. image:: https://img.shields.io/pypi/dm/uberlogging.svg
+    :target: https://pypi.python.org/pypi/uberlogging
+
 Highly opinionated wrapper/configuration around
 `structlog <http://www.structlog.org/en/stable/>`_ and stdlib logger.
 
