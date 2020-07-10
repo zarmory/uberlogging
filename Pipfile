@@ -12,6 +12,7 @@ pygments = "*"
 "collective.checkdocs" = "*"
 restview = "*"
 isort = "*"
+pre-commit = "*"
 
 [requires]
 python_version = "3.7"
