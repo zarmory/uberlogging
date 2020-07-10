@@ -37,7 +37,7 @@ padding = "    "
 def get_logger(*args, **kwargs) -> None:
     raise AttributeError("uberlogging.get_logger() was deprecated and removed. "
                          + "It did nothing but hoisting structlog.get_logger. "
-                         + "So just that instead.")
+                         + "So use just that instead.")
 
 
 class Style(Enum):
@@ -48,7 +48,7 @@ class Style(Enum):
     text_no_color = 30
 
 
-def style_to_formatter(style):
+def _style_to_formatter(style):
     return {
         Style.json: SeverityJsonFormatter,
         Style.text_color: ColoredFormatter,
@@ -187,7 +187,7 @@ def _configure_stdliblog(conf):
 
 
 def _build_conf(fmt, datefmt, logger_confs, logger_confs_list, style: Style, root_level, contextvars, stream):
-    formatter_class = style_to_formatter(style)
+    formatter_class = _style_to_formatter(style)
     formatter = formatter_class(fmt=fmt, datefmt=datefmt, contextvars=contextvars)
     conf = {
         "version": 1,
