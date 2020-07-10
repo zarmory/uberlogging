@@ -222,6 +222,8 @@ def _build_conf(fmt, datefmt, logger_confs, logger_confs_list, style: Style, roo
 class SeverityJsonFormatter(jsonlogger.JsonFormatter):
 
     def __init__(self, *args, contextvars: Tuple[ContextVar] = (), **kwargs):
+        # Requesting new Python3 style formatting
+        kwargs["style"] = "{"
         self.contextvars = contextvars
         self.renderer = kwargs.pop("renderer", ContextRenderer(color=False))
         super().__init__(*args, **kwargs)
