@@ -6,7 +6,7 @@ name = "pypi"
 [packages]
 
 [dev-packages]
-bumpversion = "*"
+bump2version = "*"
 flake8 = "*"
 pygments = "*"
 "collective.checkdocs" = "*"
